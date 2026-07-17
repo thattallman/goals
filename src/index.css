@@ -1,0 +1,138 @@
+@import 'tailwindcss';
+
+/* Class-based dark mode (toggled on <html> by useTheme). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* Brand — purple */
+  --color-brand-50: #f5f3ff;
+  --color-brand-100: #ede9fe;
+  --color-brand-200: #ddd6fe;
+  --color-brand-300: #c4b5fd;
+  --color-brand-400: #a78bfa;
+  --color-brand-500: #8b5cf6;
+  --color-brand-600: #7c3aed;
+  --color-brand-700: #6d28d9;
+  --color-brand-800: #5b21b6;
+  --color-brand-900: #4c1d95;
+
+  /* Secondary — pink */
+  --color-blush-50: #fdf2f8;
+  --color-blush-100: #fce7f3;
+  --color-blush-200: #fbcfe8;
+  --color-blush-300: #f9a8d4;
+  --color-blush-400: #f472b6;
+  --color-blush-500: #ec4899;
+  --color-blush-600: #db2777;
+  --color-blush-700: #be185d;
+
+  /* Accent — emerald */
+  --color-mint-100: #d1fae5;
+  --color-mint-300: #6ee7b7;
+  --color-mint-500: #10b981;
+  --color-mint-600: #059669;
+
+  /* Semantic */
+  --color-success: #22c55e;
+  --color-warning: #f97316;
+  --color-error: #ef4444;
+
+  /* Surfaces */
+  --color-canvas: #f8fafc;
+  --color-ink: #0f172a;
+
+  --radius-card: 1.5rem;
+
+  --shadow-soft: 0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px -12px rgb(15 23 42 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(15 23 42 / 0.05), 0 18px 40px -16px rgb(15 23 42 / 0.22);
+  --shadow-glow: 0 12px 40px -12px rgb(124 58 237 / 0.45);
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-canvas text-slate-900 antialiased;
+    font-family: var(--font-sans);
+  }
+
+  .dark body {
+    @apply bg-ink text-slate-100;
+  }
+
+  /* Consistent, visible keyboard focus everywhere. */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-500;
+  }
+
+  ::selection {
+    @apply bg-brand-200 text-brand-900;
+  }
+}
+
+@layer components {
+  /* Frosted panel used for cards, sidebar and sheets. */
+  .glass {
+    @apply border border-white/60 bg-white/70 backdrop-blur-xl;
+  }
+
+  .dark .glass {
+    @apply border-white/10 bg-white/5;
+  }
+
+  /* Ambient gradient wash behind the whole app. */
+  .aurora::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(48rem 32rem at 12% -8%, rgb(124 58 237 / 0.16), transparent 60%),
+      radial-gradient(42rem 30rem at 92% 4%, rgb(236 72 153 / 0.14), transparent 62%),
+      radial-gradient(38rem 30rem at 60% 100%, rgb(16 185 129 / 0.1), transparent 60%);
+  }
+
+  .dark .aurora::before {
+    background:
+      radial-gradient(48rem 32rem at 12% -8%, rgb(124 58 237 / 0.28), transparent 60%),
+      radial-gradient(42rem 30rem at 92% 4%, rgb(236 72 153 / 0.2), transparent 62%),
+      radial-gradient(38rem 30rem at 60% 100%, rgb(16 185 129 / 0.14), transparent 60%);
+  }
+}
+
+/* Respect the user's motion preference: kill all non-essential motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

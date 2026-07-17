@@ -1,0 +1,10 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Client-side routing: every path must fall through to index.html, or a hard refresh
+# on /insights would 404.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
