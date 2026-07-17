@@ -8,7 +8,7 @@ import { PRESETS } from './catalog'
  *
  * Backs the entire app with localStorage and a seeded 120-day history so TogetherGoals
  * is fully usable — streaks, charts, heatmap, partner comparison — before anyone touches
- * Supabase. It implements exactly the same async contract as supabaseRepo, so swapping
+ * Firebase. It implements exactly the same async contract as firebaseRepo, so swapping
  * between them is a one-line change in data/index.js and nothing upstream notices.
  */
 
@@ -221,7 +221,7 @@ function read() {
 
 function write(db) {
   window.localStorage.setItem(DB_KEY, JSON.stringify(db))
-  // Mirrors Supabase realtime: anything that mutates notifies subscribers.
+  // Mirrors Firebase realtime: anything that mutates notifies subscribers.
   for (const fn of listeners) fn()
 }
 
@@ -294,6 +294,11 @@ export const mockRepo = {
   },
 
   async updatePassword() {
+    await sleep()
+    return { demo: true }
+  },
+
+  async confirmPasswordReset() {
     await sleep()
     return { demo: true }
   },
@@ -452,7 +457,7 @@ export const mockRepo = {
   /**
    * Log today's value for a goal. This is the single write path for all progress:
    * it updates the counter, the progress row, XP and the shared activity feed
-   * together, exactly like the Supabase RPC does.
+   * together, exactly like the Firestore transaction does.
    */
   async setGoalValue({ goalId, date = todayKey(), value }) {
     await sleep(70)
@@ -521,7 +526,7 @@ export const mockRepo = {
 
   /* -------------------------------------------------------------- realtime */
 
-  /** Same shape as the Supabase channel: any local write pings every subscriber. */
+  /** Same shape as the Firestore listeners: any local write pings every subscriber. */
   subscribeToCouple(_coupleId, onChange) {
     listeners.add(onChange)
     return () => listeners.delete(onChange)

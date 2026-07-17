@@ -1,0 +1,91 @@
+rules_version = '2';
+
+// ============================================================================
+// TogetherGoals — Firestore Security Rules
+//
+// The rule, in one sentence: you can write your own documents, and you can read your own
+// documents plus your partner's. Nobody else can see anything.
+//
+// myCoupleId() reads the caller's own profile doc to find their couple_id — every
+// "can my partner see this?" check goes through it.
+//
+// Known limitation: setGoalValue (see src/data/firebaseRepo.js) runs its transaction on
+// the client, since Firestore has no server-side function layer without Cloud Functions.
+// These rules check ownership and document shape, but can't fully replicate "XP only
+// increases via a legitimate goal completion" the way Supabase's SECURITY DEFINER
+// log_progress function did.
+// ============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function myCoupleId() {
+      return get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.couple_id;
+    }
+
+    function isCoupleMember(coupleId) {
+      return signedIn() && coupleId != null && myCoupleId() == coupleId;
+    }
+
+    // ---------------------------------------------------------------- profiles --
+    match /profiles/{uid} {
+      allow read: if isSelf(uid) || isCoupleMember(resource.data.couple_id);
+      allow create, update: if isSelf(uid);
+      allow delete: if false;
+    }
+
+    // ----------------------------------------------------------------- couples --
+    // Anyone signed in may look a couple up by its invite code — that's how joining
+    // works. They still can't read another couple's goals/progress/activity.
+    match /couples/{coupleId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.created_by == request.auth.uid;
+      allow update: if isCoupleMember(coupleId);
+      allow delete: if false;
+
+      match /members/{uid} {
+        allow read: if signedIn();
+        allow create, delete: if isSelf(uid);
+        allow update: if false;
+      }
+    }
+
+    // ------------------------------------------------------------------- goals --
+    // Read your partner's goals; write only your own. Nobody edits anyone else's plan.
+    match /goals/{goalId} {
+      allow read: if signedIn() &&
+        (resource.data.user_id == request.auth.uid || isCoupleMember(resource.data.couple_id));
+      allow create: if signedIn() && request.resource.data.user_id == request.auth.uid;
+      allow update, delete: if signedIn() && resource.data.user_id == request.auth.uid;
+    }
+
+    // ----------------------------------------------------------- goalProgress --
+    match /goalProgress/{progressId} {
+      allow read: if signedIn() && (
+        resource.data.user_id == request.auth.uid ||
+        isCoupleMember(
+          get(/databases/$(database)/documents/goals/$(resource.data.goal_id)).data.couple_id
+        )
+      );
+      allow create, update: if signedIn() && request.resource.data.user_id == request.auth.uid;
+      allow delete: if signedIn() && resource.data.user_id == request.auth.uid;
+    }
+
+    // ----------------------------------------------------------- activityFeed --
+    match /activityFeed/{activityId} {
+      allow read: if isCoupleMember(resource.data.couple_id);
+      allow create: if signedIn() &&
+        request.resource.data.user_id == request.auth.uid &&
+        isCoupleMember(request.resource.data.couple_id);
+      allow update, delete: if false;
+    }
+  }
+}

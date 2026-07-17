@@ -1,7 +1,7 @@
 /**
  * The starter catalogue: categories, plus the preset goals we offer in the "quick add"
  * pickers on Health, Career and Daily Goals. Kept out of the database so both repos —
- * and supabase/seed.sql — agree on exactly one source of truth.
+ * agree on exactly one source of truth.
  */
 
 export const CATEGORIES = [

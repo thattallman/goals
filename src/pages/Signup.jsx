@@ -5,7 +5,6 @@ import { Mail, Lock, User } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Field'
-import { isSupabaseConfigured } from '../lib/supabase'
 
 export default function Signup() {
   const { signUp } = useAuth()
@@ -26,9 +25,9 @@ export default function Signup() {
     setFormError(null)
     try {
       const session = await signUp(values)
-      // With email confirmation on, Supabase returns no session — say so instead of
-      // dumping the user back on a login screen with no explanation.
-      if (!session && isSupabaseConfigured) setConfirmEmail(true)
+      // If a backend ever withholds the session pending email confirmation, say so
+      // instead of dumping the user back on a login screen with no explanation.
+      if (!session) setConfirmEmail(true)
       else navigate('/connect', { replace: true })
     } catch (error) {
       setFormError(error.message ?? 'Could not create your account.')

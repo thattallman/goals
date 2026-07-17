@@ -1,20 +1,25 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { Lock } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Field'
 import { useToast } from '../context/ToastContext'
+import { isDemo } from '../data'
 
 /**
- * Where Supabase's reset email lands. The recovery link puts a session in place before
- * we get here, so updateUser() is all that's left to do.
+ * Where the emailed reset link lands. Firebase never puts a session in place here — the
+ * link only carries an oobCode, which has to be redeemed explicitly via
+ * confirmPasswordReset(). There's nothing to sign the user back into afterward, so a
+ * successful reset sends them to /login rather than into the app.
  */
 export default function ResetPassword() {
-  const { updatePassword } = useAuth()
+  const { confirmPasswordReset } = useAuth()
   const navigate = useNavigate()
   const toast = useToast()
+  const [searchParams] = useSearchParams()
+  const oobCode = searchParams.get('oobCode')
   const [formError, setFormError] = useState(null)
 
   const {
@@ -29,13 +34,32 @@ export default function ResetPassword() {
   const onSubmit = handleSubmit(async ({ password: next }) => {
     setFormError(null)
     try {
-      await updatePassword(next)
-      toast.success('Password updated. Welcome back!')
-      navigate('/', { replace: true })
+      await confirmPasswordReset(oobCode, next)
+      toast.success('Password updated. Sign in with your new password.')
+      navigate('/login', { replace: true })
     } catch (error) {
       setFormError(error.message ?? 'Could not update your password.')
     }
   })
+
+  if (!oobCode && !isDemo) {
+    return (
+      <div className="text-center">
+        <div className="mx-auto mb-4 grid size-16 place-items-center rounded-3xl bg-red-100 text-3xl dark:bg-red-500/15">
+          ⚠️
+        </div>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+          This link is invalid or expired
+        </h1>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          Reset links only work once. Request a new one and try again.
+        </p>
+        <Link to="/forgot-password">
+          <Button className="mt-6 w-full justify-center">Request a new link</Button>
+        </Link>
+      </div>
+    )
+  }
 
   return (
     <div>

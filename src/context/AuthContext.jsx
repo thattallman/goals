@@ -88,6 +88,7 @@ export function AuthProvider({ children }) {
       signUp: (payload) => repo.signUp(payload),
       signOut: () => repo.signOut(),
       resetPassword: (email) => repo.resetPassword(email),
+      confirmPasswordReset: (oobCode, password) => repo.confirmPasswordReset(oobCode, password),
       updatePassword: (password) => repo.updatePassword(password),
       deleteAccount: () => repo.deleteAccount(),
     }),

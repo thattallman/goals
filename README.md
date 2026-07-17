@@ -11,7 +11,7 @@ npm install && npm run dev
 ```
 
 With no `.env` present the app boots into demo mode: seeded data, a partner ("Riya"),
-120 days of history. Add Supabase credentials and the same code talks to a real
+120 days of history. Add Firebase credentials and the same code talks to a real
 database instead. See **[SETUP.md](./SETUP.md)**.
 
 ---
@@ -38,12 +38,12 @@ it says *"Let's catch up together ❤️"*.
 
 ## Architecture
 
-Everything talks to **one repository interface**, never to Supabase directly:
+Everything talks to **one repository interface**, never to Firebase directly:
 
 ```
 src/data/
-  index.js        picks the repo at runtime — env vars present? supabase : demo
-  supabaseRepo.js real queries + realtime channels
+  index.js        picks the repo at runtime — env vars present? firebase : demo
+  firebaseRepo.js real queries + Firestore listeners
   mockRepo.js     localStorage, seeded, same async contract
 ```
 
@@ -53,8 +53,9 @@ ready" the same codebase rather than two.
 
 - **Auth state** — React Context (`src/context/AuthContext.jsx`)
 - **Server state** — TanStack Query, with optimistic updates on every counter tap
-- **Realtime** — one Postgres channel per couple; `useRealtimeSync` invalidates the
-  cache so your partner's changes land on your screen without a refresh
+- **Realtime** — Firestore `onSnapshot` listeners scoped to the couple;
+  `useRealtimeSync` invalidates the cache so your partner's changes land on your screen
+  without a refresh
 - **Scoring** — `src/lib/scoring.js` is the only place that decides what "78%" means,
   so the rings, the report and the insights can never disagree
 
@@ -67,13 +68,14 @@ src/
   hooks/       useGoals · useProgress · useInsights · useRealtimeSync · useTheme
   lib/         scoring · streaks · gamification · confetti · format
   data/        the repository layer + catalogue
-supabase/      schema.sql · policies.sql · seed.sql
+firestore.rules          security rules — read your own rows + your partner's, write only your own
+firestore.indexes.json   composite indexes the queries above need
 ```
 
 ## Stack
 
 React 19 · Vite · Tailwind v4 · Framer Motion · TanStack Query · React Hook Form ·
-Recharts · Lucide · Supabase (Auth + Postgres + Realtime + RLS)
+Recharts · Lucide · Firebase (Auth + Firestore + Security Rules)
 
 ## Notes on the details
 
@@ -85,8 +87,9 @@ Recharts · Lucide · Supabase (Auth + Postgres + Realtime + RLS)
 - **Motion** respects `prefers-reduced-motion` — including the confetti.
 - **Accessibility** — keyboard-trapped dialogs, ARIA-labelled controls, visible focus
   rings, a skip link, and live regions on toasts.
-- **Security** — RLS means a user can only ever read their own rows and their partner's.
-  The two-person limit on a couple is a database trigger, not a UI check.
+- **Security** — Firestore Security Rules mean a user can only ever read their own rows
+  and their partner's. The two-person limit on a couple is checked client-side (no
+  Cloud Functions in this app), same as the invite-code join flow.
 
 ## Scripts
 

@@ -25,7 +25,7 @@ export function DemoBadge() {
             Demo mode
           </span>
           <span className="block text-[11px] leading-snug text-amber-700 dark:text-amber-300/80">
-            Sample data, stored locally. Connect Supabase to go live.
+            Sample data, stored locally. Connect Firebase to go live.
           </span>
         </span>
       </button>
@@ -42,8 +42,8 @@ export function DemoBadge() {
             living in your browser's local storage. Nothing is sent anywhere.
           </p>
           <p>
-            To go live, create a Supabase project, run the SQL in <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs dark:bg-white/10">supabase/</code>, and add your
-            URL and anon key to <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs dark:bg-white/10">.env</code>. The app switches
+            To go live, create a Firebase project, paste <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs dark:bg-white/10">firestore.rules</code> into
+            its console, and add your web app config to <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs dark:bg-white/10">.env</code>. The app switches
             over on the next reload — see <strong>SETUP.md</strong>.
           </p>
           <div className="flex justify-end gap-3 pt-2">

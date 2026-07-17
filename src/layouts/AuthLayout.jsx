@@ -72,7 +72,7 @@ export function AuthLayout() {
         </div>
 
         <p className="relative text-xs text-white/50">
-          {isDemo ? 'Running in demo mode — no account needed.' : 'Secured by Supabase.'}
+          {isDemo ? 'Running in demo mode — no account needed.' : 'Secured by Firebase.'}
         </p>
       </div>
 
