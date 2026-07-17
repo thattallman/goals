@@ -22,8 +22,6 @@ import {
   collection,
   query,
   where,
-  orderBy,
-  limit as fbLimit,
   onSnapshot,
   runTransaction,
   writeBatch,
@@ -251,10 +249,12 @@ export const firebaseRepo = {
   /* ----------------------------------------------------------------- goals */
 
   async listGoals(userId) {
-    const snap = await getDocs(
-      query(collection(db, 'goals'), where('user_id', '==', userId), orderBy('created_at', 'desc')),
-    )
-    return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+    // Single equality filter only — sorting happens client-side so no composite index
+    // (user_id + created_at) is required in Firestore.
+    const snap = await getDocs(query(collection(db, 'goals'), where('user_id', '==', userId)))
+    return snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))
   },
 
   async listCoupleGoals(coupleId) {
@@ -370,29 +370,29 @@ export const firebaseRepo = {
 
   async listProgress(userId, days = 365) {
     const from = dateKey(subDays(new Date(), days))
+    // Single equality filter only — the date window and ascending order are applied
+    // client-side so no composite index (user_id + date) is required in Firestore.
     const snap = await getDocs(
-      query(
-        collection(db, 'goalProgress'),
-        where('user_id', '==', userId),
-        where('date', '>=', from),
-        orderBy('date', 'asc'),
-      ),
+      query(collection(db, 'goalProgress'), where('user_id', '==', userId)),
     )
-    return snap.docs.map((d) => d.data())
+    return snap.docs
+      .map((d) => d.data())
+      .filter((r) => r.date >= from)
+      .sort((a, b) => a.date.localeCompare(b.date))
   },
 
   /* -------------------------------------------------------------- activity */
 
   async listActivity(coupleId, limitCount = 12) {
+    // Single equality filter only — newest-first ordering and the limit are applied
+    // client-side so no composite index (couple_id + created_at) is required.
     const snap = await getDocs(
-      query(
-        collection(db, 'activityFeed'),
-        where('couple_id', '==', coupleId),
-        orderBy('created_at', 'desc'),
-        fbLimit(limitCount),
-      ),
+      query(collection(db, 'activityFeed'), where('couple_id', '==', coupleId)),
     )
-    return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+    return snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))
+      .slice(0, limitCount)
   },
 
   /* -------------------------------------------------------------- realtime */
