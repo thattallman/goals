@@ -200,7 +200,7 @@ export const firebaseRepo = {
     await setDoc(doc(db, 'couples', coupleRef.id, 'members', userId), {
       joined_at: new Date().toISOString(),
     })
-    await updateDoc(doc(db, 'profiles', userId), { couple_id: coupleRef.id })
+    await setDoc(doc(db, 'profiles', userId), { couple_id: coupleRef.id }, { merge: true })
 
     return { id: coupleRef.id, ...couple }
   },
@@ -227,7 +227,7 @@ export const firebaseRepo = {
     await setDoc(doc(db, 'couples', coupleId, 'members', userId), {
       joined_at: new Date().toISOString(),
     })
-    await updateDoc(doc(db, 'profiles', userId), { couple_id: coupleId })
+    await setDoc(doc(db, 'profiles', userId), { couple_id: coupleId }, { merge: true })
 
     return { id: coupleId, ...coupleDoc.data() }
   },
@@ -238,7 +238,7 @@ export const firebaseRepo = {
     if (!coupleId) return
 
     await deleteDoc(doc(db, 'couples', coupleId, 'members', userId))
-    await updateDoc(doc(db, 'profiles', userId), { couple_id: null })
+    await setDoc(doc(db, 'profiles', userId), { couple_id: null }, { merge: true })
   },
 
   async updateCouple(coupleId, patch) {
