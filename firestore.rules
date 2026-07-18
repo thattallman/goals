@@ -9,6 +9,12 @@ rules_version = '2';
 // myCoupleId() reads the caller's own profile doc to find their couple_id — every
 // "can my partner see this?" check goes through it.
 //
+// Read rules guard `resource == null` first: reading a document that doesn't exist yet
+// (e.g. the day's goalProgress row, which setGoalValue's transaction reads before its
+// first write) must be allowed — there's no data to protect. Without this guard,
+// `resource.data.*` throws on a missing doc and Firestore denies the read, which aborts
+// the whole completion transaction with "Missing or insufficient permissions".
+//
 // Known limitation: setGoalValue (see src/data/firebaseRepo.js) runs its transaction on
 // the client, since Firestore has no server-side function layer without Cloud Functions.
 // These rules check ownership and document shape, but can't fully replicate "XP only
@@ -37,7 +43,7 @@ service cloud.firestore {
 
     // ---------------------------------------------------------------- profiles --
     match /profiles/{uid} {
-      allow read: if isSelf(uid) || isCoupleMember(resource.data.couple_id);
+      allow read: if isSelf(uid) || (resource != null && isCoupleMember(resource.data.couple_id));
       allow create, update: if isSelf(uid);
       allow delete: if false;
     }
@@ -62,7 +68,9 @@ service cloud.firestore {
     // Read your partner's goals; write only your own. Nobody edits anyone else's plan.
     match /goals/{goalId} {
       allow read: if signedIn() &&
-        (resource.data.user_id == request.auth.uid || isCoupleMember(resource.data.couple_id));
+        (resource == null ||
+          resource.data.user_id == request.auth.uid ||
+          isCoupleMember(resource.data.couple_id));
       allow create: if signedIn() && request.resource.data.user_id == request.auth.uid;
       allow update, delete: if signedIn() && resource.data.user_id == request.auth.uid;
     }
@@ -70,6 +78,7 @@ service cloud.firestore {
     // ----------------------------------------------------------- goalProgress --
     match /goalProgress/{progressId} {
       allow read: if signedIn() && (
+        resource == null ||
         resource.data.user_id == request.auth.uid ||
         isCoupleMember(
           get(/databases/$(database)/documents/goals/$(resource.data.goal_id)).data.couple_id
@@ -81,7 +90,7 @@ service cloud.firestore {
 
     // ----------------------------------------------------------- activityFeed --
     match /activityFeed/{activityId} {
-      allow read: if isCoupleMember(resource.data.couple_id);
+      allow read: if resource == null || isCoupleMember(resource.data.couple_id);
       allow create: if signedIn() &&
         request.resource.data.user_id == request.auth.uid &&
         isCoupleMember(request.resource.data.couple_id);
